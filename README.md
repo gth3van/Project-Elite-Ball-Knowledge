@@ -1,55 +1,55 @@
 # WeBallinGang - Advanced Sportsbook Analyst & Poisson Calculator ⚽📈
 
-**WeBallinGang** adalah program analisis data sepak bola dan kalkulator taruhan sportsbook canggih yang berjalan secara lokal di komputer Anda. Program ini memodelkan probabilitas hasil pertandingan secara matematis menggunakan **Distribusi Poisson (Expected Goals - xG)**, tren momentum performa terkini (*Weighted Form*), data historis *Head-to-Head* (H2H), serta mensimulasikan babak **Overtime** dan **Adu Penalti** untuk pertandingan fase gugur.
+**WeBallinGang** is a local, advanced football analytics tool and sportsbook calculator. It mathematically models match probabilities using a **Poisson Distribution (Expected Goals - xG)**, scales results using a **Weighted Recency Form** modifier (capturing hot streaks and team momentum), blends historical Head-to-Head (H2H) records, and simulates **Overtime** and **Penalty Shootouts** for knockout stage matches.
 
-Program ini juga terintegrasi secara dinamis dengan **Polymarket Gamma API** untuk menarik odds pasar secara real-time dan mendeteksi celah keuntungan taruhan secara statistik (**Value Bet**).
-
----
-
-## 🚀 Fitur Utama
-
-1. **Engine Prediksi Poisson (xG) Presisi:**
-   * Menghitung kekuatan serang (*Attack Strength*) dan kekuatan bertahan (*Defense Strength*) setiap tim secara dinamis dari database pertandingan.
-   * Dilengkapi *Laplace Additive Smoothing* (+0.5) untuk mencegah anomali matematika (seperti tim yang cleansheet 0 gol di fase grup).
-   * Menghasilkan probabilitas murni untuk Moneyline (1X2), Over/Under 2.5 Goals, dan *Both Teams to Score* (BTTS).
-
-2. **Model Momentum Tertimbang (*Weighted Recency Form*):**
-   * Menganalisis tren performa 5 pertandingan terakhir.
-   * Memberikan bobot dinamis linier (laga terbaru memiliki pengaruh 5x lipat lebih besar dibanding laga tertua) untuk menangkap tren performa/kemenangan beruntun secara akurat.
-   * Pengaruh modifier performa berkisar dari `0.65` (sangat buruk) hingga `1.35` (sangat panas).
-
-3. **Simulasi Knockout Terintegrasi (Overtime & Penalti):**
-   * Khusus pertandingan babak gugur (*knockout*), bot mensimulasikan babak tambahan (Overtime 30 menit) menggunakan $1/3$ porsi kekuatan xG normal.
-   * Mensimulasikan adu penalti secara statistik (50-50) untuk menghasilkan probabilitas pasar **To Advance / Lolos** secara akurat.
-
-4. **Deteksi Celah Taruhan (*Value Bet Detector*):**
-   * Membandingkan *fair odds* (odds wajar) kalkulasi matematis program dengan odds real-time di pasar Polymarket.
-   * Memberikan rekomendasi taruhan otomatis jika odds di pasaran dinilai terlalu tinggi (menguntungkan).
-   * Dilengkapi filter otomatis untuk mengabaikan bursa pasar taruhan yang sudah selesai/tutup (odds $\ge 50.0$).
-
-5. **Dua Mode Tampilan Premium:**
-   * **Mode CLI Terminal (`main.py`):** Cepat, hemat data, gratis selamanya, dan bebas kuota/limit API.
-   * **Mode Web App Local (`server.py`):** Tampilan Glassmorphism dark mode modern dengan panel daftar jadwal tanding terintegrasi dan chatbot AI **WeBallinGang AI** berbasis Gemini 3.5 Flash (Function Calling).
+The program integrates in real-time with the **Polymarket Gamma API** to fetch market odds and automatically detect statistical discrepancies (**Value Bets**).
 
 ---
 
-## 🛠️ Persiapan & Instalasi
+## 🚀 Key Features
 
-### 1. Prasyarat
-Pastikan Anda sudah menginstal Python (versi 3.12 atau 3.13) di komputer Anda.
+1. **Precision Poisson xG Engine:**
+   * Computes team-specific Attack and Defense strengths dynamically from the database.
+   * Employs *Laplace Additive Smoothing* (+0.5 goals/games) to prevent statistical anomalies (e.g., a team with clean sheets in group stages yielding 0 xG for opponents).
+   * Generates fair probabilities for Moneyline (1X2), Over/Under 2.5 Goals, and Both Teams to Score (BTTS) markets.
 
-### 2. Kloning Repositori & Install Dependensi
-Buka terminal Anda dan jalankan perintah berikut:
+2. **Weighted Recency Form (Momentum Tracker):**
+   * Menganalisis 5 pertandingan terakhir tim.
+   * Applies linear recency weights (the most recent match is weighted 5x more than the oldest) to accurately reflect current form and momentum.
+   * Adjusts Expected Goals using a form multiplier ranging from `0.65` (poor form) to `1.35` (excellent form/hot streak).
+
+3. **Knockout Stage Simulation (Overtime & Penalties):**
+   * For knockout matches, the engine simulates a 30-minute Overtime period using $1/3$ of the 90-minute xG.
+   * Models penalty shootouts as a 50-50 statistical coin-toss to generate precise probabilities for the **To Advance / To Qualify** market.
+
+4. **Value Bet Detection:**
+   * Compares the calculated fair odds against live Polymarket decimal odds.
+   * Highlights profitable opportunities when market odds are higher than the model's calculated fair odds.
+   * Automatically filters out resolved or dead markets (odds $\ge 50.0$).
+
+5. **Dual Interface Options:**
+   * **Terminal CLI (`main.py`):** Fast, lightweight, 100% offline-ready, and free of API rate limits.
+   * **Local Web App (`server.py`):** A modern Glassmorphism dark-mode UI containing a match list dashboard and an interactive chatbot **WeBallinGang AI** powered by Gemini 3.5 Flash (Function Calling).
+
+---
+
+## 🛠️ Installation & Setup
+
+### 1. Prerequisites
+Ensure you have Python (version 3.12 or 3.13) installed on your system.
+
+### 2. Clone & Install Dependencies
+Open your terminal inside the project directory and run:
 ```bash
-# Masuk ke folder proyek
-cd "c:/Project Ball"
+# Navigate to the project directory
+cd "C:/Project Elite Ball Knowledge"
 
-# Install seluruh library yang dibutuhkan
+# Install all required Python packages
 python -m pip install -r requirements.txt
 ```
 
-### 3. Konfigurasi Lingkungan
-Buat file bernama `.env` di direktori utama proyek Anda, lalu isi dengan format berikut:
+### 3. Environment Variables
+Create a file named `.env` in the root directory and configure your API tokens:
 ```env
 FOOTBALL_API_TOKEN=9dbfd450b0a34746ba25568665f6a0ae
 GEMINI_API_KEY=AQ.Ab8RN6JU9JZfmiFU-nI9UftH24gfXnwwHZvLA2kKtC90rMlj2w
@@ -57,33 +57,33 @@ GEMINI_API_KEY=AQ.Ab8RN6JU9JZfmiFU-nI9UftH24gfXnwwHZvLA2kKtC90rMlj2w
 
 ---
 
-## 💻 Cara Menjalankan Program
+## 💻 Running the Application
 
-### Mode A: Terminal CLI (Direkomendasikan & Bebas Kuota)
-Untuk menjalankan versi terminal interaktif, jalankan perintah berikut:
+### Mode A: Interactive Terminal CLI (Recommended)
+Launch the CLI interface by running:
 ```bash
 python main.py
 ```
-**Menu Pilihan:**
-1. **Sync Standings:** Mengambil update klasemen liga terbaru.
-2. **Sync Matches:** Mengambil update jadwal dan hasil skor pertandingan terbaru.
-3. **List Matches & Predict:** Menampilkan daftar pertandingan aktif. Cukup ketikkan **ID Pertandingan** (misal: `537387` untuk Prancis vs Spanyol) untuk melihat analisis lengkapnya secara instan!
+**Options:**
+1. **Sync Standings:** Updates the database with the latest league standings.
+2. **Sync Matches:** Synchronizes latest match fixtures and completed scores.
+3. **List Matches & Predict:** Shows scheduled fixtures. Enter the **Match ID** (e.g., `537387` for France vs. Spain) to run the simulation instantly!
 
 ---
 
-### Mode B: Local Web App (Chatbot AI Premium)
-Jika Anda ingin berinteraksi dengan AI analis visual **WeBallinGang AI**, jalankan server lokal:
+### Mode B: Local Web App (AI Chatbot)
+Start the local web server:
 ```bash
 python server.py
 ```
-Setelah server aktif, buka browser Anda dan akses alamat:
+Once active, open your browser and navigate to:
 👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
-*Anda bisa langsung mengklik kartu pertandingan di panel kiri browser untuk meminta AI menganalisis pertandingan tersebut secara otomatis!*
+*Simply click any match card on the sidebar to prompt the AI to run a full analysis automatically!*
 
 ---
 
-## 📊 Contoh Output Analisis (Prancis vs Spanyol - Semifinal)
+## 📊 Example Output (France vs. Spain - Semi-Final)
 
 ```text
 ============================================================
@@ -124,25 +124,25 @@ H2H Stats Used : Yes (based on 7 recent matches)
 
 ---
 
-## ⚙️ Struktur Folder Proyek
+## ⚙️ Directory Structure
 ```text
-c:/Project Ball/
+C:/Project Elite Ball Knowledge/
 │
-├── api_client.py          # Logika pemanggilan Football-Data API & Polymarket API
-├── database.py            # Skema database SQLite & fungsi kueri data lokal
-├── calculator.py          # Engine matematika Poisson, form, dan simulasi overtime
-├── main.py                # Antarmuka CLI interaktif untuk terminal
-├── server.py              # Server web Flask terintegrasi Gemini AI 3.5 Flash
+├── api_client.py          # Football API & Polymarket integration logic
+├── database.py            # SQLite schema configuration & query utilities
+├── calculator.py          # Mathematical engine (Poisson, form modifiers, overtime)
+├── main.py                # Terminal-based interactive CLI
+├── server.py              # Flask server and Gemini AI integration
 │
 ├── templates/
-│   └── index.html         # Frontend Dashboard Chatbot Glassmorphism
+│   └── index.html         # Glassmorphism dark-mode UI dashboard
 │
-├── requirements.txt       # Daftar pustaka dependensi Python
-├── .env                   # Token & Kunci API sensitif (jangan di-commit ke Git)
-└── README.md              # Panduan ini
+├── requirements.txt       # Dependencies manifest
+├── .env                   # Secret keys & API configurations (git-ignored)
+└── README.md              # This file
 ```
 
 ---
 
-## 📝 Lisensi
-Proyek ini dibuat untuk tujuan analisis statistik olahraga pribadi. Segala bentuk keputusan taruhan yang diambil berdasarkan hasil kalkulasi bot ini sepenuhnya merupakan tanggung jawab pengguna. gunakan dengan bijak!
+## 📝 License
+This project is for personal sports statistical analysis. Betting carries risk, and users are solely responsible for their financial decisions. Use responsibly!

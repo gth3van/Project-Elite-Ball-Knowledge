@@ -1,0 +1,20 @@
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables (Sangat penting agar API Key tidak bocor!)
+.env
+
+# Database lokal SQLite
+*.db
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# IDE settings
+.vscode/
+.idea/

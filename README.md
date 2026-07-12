@@ -14,6 +14,7 @@ The program integrates in real-time with the **Polymarket Gamma API** to fetch m
    * Generates fair probabilities for Moneyline (1X2), Over/Under 2.5 Goals, and Both Teams to Score (BTTS) markets.
 
 2. **Weighted Recency Form (Momentum Tracker):**
+   * Menganalisis 5 pertandingan terakhir tim.
    * Applies linear recency weights (the most recent match is weighted 5x more than the oldest) to accurately reflect current form and momentum.
    * Adjusts Expected Goals using a form multiplier ranging from `0.65` (poor form) to `1.35` (excellent form/hot streak).
 
@@ -39,30 +40,41 @@ The engine calculates football match probabilities using a multi-layered statist
 ### 1. Expected Goals (xG) Estimation
 The model first establishes the base scoring rate of the competition and the relative strengths of the competing teams.
 
-*   **League/Tournament Average Goals per Team ($\text{Avg}_{\text{Goals}}$):**
-    $$\text{Avg}_{\text{Goals}} = \frac{\text{Total Goals Scored in Tournament}}{2 \times \text{Total Finished Matches}}$$
+**League/Tournament Average Goals per Team ($\text{Avg}_{\text{Goals}}$):**
 
-*   **Attack and Defense Strength (with Laplace Smoothing):**
-    To avoid extreme calculations (such as dividing by zero or getting $0.0$ xG for opponents playing a team with $100\%$ clean sheets), we apply additive smoothing ($+0.5$):
-    $$\text{Attack Strength (Home)} = \frac{(\text{Goals Scored by Home} + 0.5) / (\text{Matches Played} + 0.5)}{\text{Avg}_{\text{Goals}}}$$
-    $$\text{Defense Strength (Away)} = \frac{(\text{Goals Conceded by Away} + 0.5) / (\text{Matches Played} + 0.5)}{\text{Avg}_{\text{Goals}}}$$
+$$\text{Avg}_{\text{Goals}} = \frac{\text{Total Goals Scored in Tournament}}{2 \times \text{Total Finished Matches}}$$
 
-*   **Base expected goals (xG) calculation:**
-    $$\text{Base xG}_{\text{Home}} = \text{Attack Strength}_{\text{Home}} \times \text{Defense Strength}_{\text{Away}} \times \text{Avg}_{\text{Goals}}$$
-    $$\text{Base xG}_{\text{Away}} = \text{Attack Strength}_{\text{Away}} \times \text{Defense Strength}_{\text{Home}} \times \text{Avg}_{\text{Goals}}$$
+**Attack and Defense Strength (with Laplace Smoothing):**
+To avoid extreme calculations (such as dividing by zero or getting $0.0$ xG for opponents playing a team with $100\%$ clean sheets), we apply additive smoothing ($+0.5$):
 
-### 2. Weighted Form Modifier ($\mathbf{F}$)
+$$\text{Attack Strength (Home)} = \frac{\frac{\text{Goals Scored by Home} + 0.5}{\text{Matches Played} + 0.5}}{\text{Avg}_{\text{Goals}}}$$
+
+$$\text{Defense Strength (Away)} = \frac{\frac{\text{Goals Conceded by Away} + 0.5}{\text{Matches Played} + 0.5}}{\text{Avg}_{\text{Goals}}}$$
+
+**Base Expected Goals (xG) Calculation:**
+
+$$\text{Base xG}_{\text{Home}} = \text{Attack Strength}_{\text{Home}} \times \text{Defense Strength}_{\text{Away}} \times \text{Avg}_{\text{Goals}}$$
+
+$$\text{Base xG}_{\text{Away}} = \text{Attack Strength}_{\text{Away}} \times \text{Defense Strength}_{\text{Home}} \times \text{Avg}_{\text{Goals}}$$
+
+### 2. Weighted Form Modifier ($F$)
 We adjust base xG to reflect recent momentum. The last 5 matches are weighted linearly ($[5, 4, 3, 2, 1]$ from newest to oldest):
+
 $$\text{Weighted Points} = \sum_{i=1}^{5} \text{Result Points}_i \times \text{Weight}_i$$
+
 $$\text{Form Ratio} = \frac{\text{Weighted Points}}{\sum \text{Weights} \times 3} = \frac{\text{Weighted Points}}{45}$$
+
 $$\text{Form Modifier } (F) = 0.65 + (\text{Form Ratio} \times 0.70)$$
+
 $$\text{Adjusted xG} = \text{Base xG} \times F_{\text{Team}}$$
 
 ### 3. Poisson Probability Score Matrix
 We model goal-scoring as a Poisson process. The probability of a team scoring exactly $k$ goals given an expected rate $\lambda$ (Adjusted xG) is:
+
 $$P(k; \lambda) = \frac{\lambda^k e^{-\lambda}}{k!}$$
 
 Assuming independence between team score lines, the probability of a specific scoreline $[H - A]$ (e.g., $2-1$) is the product of their individual Poisson probabilities:
+
 $$P(H, A) = P(H; \lambda_{\text{Home}}) \times P(A; \lambda_{\text{Away}})$$
 
 We construct a $6 \times 6$ grid (up to 5 goals each) to derive:
@@ -75,17 +87,21 @@ We construct a $6 \times 6$ grid (up to 5 goals each) to derive:
 ### 4. Overtime & Penalty Shootout Simulation
 For knockout stages, if a match ends in a draw ($P(\text{Draw})$), it proceeds to Overtime (30 minutes) and potentially a Penalty Shootout.
 
-*   **Overtime (OT) xG Simulation:**
-    Since Overtime is 30 minutes long ($1/3$ of normal time), we scale the Adjusted xG:
-    $$\lambda_{\text{OT}} = \frac{\lambda_{\text{Normal}}}{3}$$
-    We then run a secondary Poisson matrix for the 30-minute OT period to calculate $P(\text{Win}_{\text{Home in OT}})$, $P(\text{Win}_{\text{Away in OT}})$, and $P(\text{Draw}_{\text{in OT}})$.
+**Overtime (OT) xG Simulation:**
+Since Overtime is 30 minutes long ($1/3$ of normal time), we scale the Adjusted xG:
 
-*   **Penalty Shootout:**
-    Adu penalti dihitung sebagai peluang berimbang ($50\%$ chance for each team).
+$$\lambda_{\text{OT}} = \frac{\lambda_{\text{Normal}}}{3}$$
 
-*   **Total Probability to Advance ($P(\text{Advance})$):**
-    $$P(\text{Advance}_{\text{Home}}) = P(\text{Win}_{\text{Home in 90m}}) + P(\text{Draw}_{\text{in 90m}}) \times \left[ P(\text{Win}_{\text{Home in OT}}) + P(\text{Draw}_{\text{in OT}}) \times 0.5 \right]$$
-    $$P(\text{Advance}_{\text{Away}}) = P(\text{Win}_{\text{Away in 90m}}) + P(\text{Draw}_{\text{in 90m}}) \times \left[ P(\text{Win}_{\text{Away in OT}}) + P(\text{Draw}_{\text{in OT}}) \times 0.5 \right]$$
+We then run a secondary Poisson matrix for the 30-minute OT period to calculate $P(\text{Win}_{\text{Home in OT}})$, $P(\text{Win}_{\text{Away in OT}})$, and $P(\text{Draw}_{\text{in OT}})$.
+
+**Penalty Shootout:**
+Adu penalti dihitung sebagai peluang berimbang ($50\%$ chance for each team).
+
+**Total Probability to Advance ($P(\text{Advance})$):**
+
+$$P(\text{Advance}_{\text{Home}}) = P(\text{Win}_{\text{Home in 90m}}) + P(\text{Draw}_{\text{in 90m}}) \times \left[ P(\text{Win}_{\text{Home in OT}}) + P(\text{Draw}_{\text{in OT}}) \times 0.5 \right]$$
+
+$$P(\text{Advance}_{\text{Away}}) = P(\text{Win}_{\text{Away in 90m}}) + P(\text{Draw}_{\text{in 90m}}) \times \left[ P(\text{Win}_{\text{Away in OT}}) + P(\text{Draw}_{\text{in OT}}) \times 0.5 \right]$$
 
 ---
 
